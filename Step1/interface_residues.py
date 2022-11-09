@@ -1,3 +1,6 @@
+# Prepare a python script to define the list of interface residues on each chain. This script is modified from an original script:
+# https://pymolwiki.org/index.php/InterfaceResidues#The_Code
+
 from pymol import cmd, stored
 
 def interfaceResidues(cmpx, cA='c. A', cB='c. B', cutoff=1.0, selName="interface"):
