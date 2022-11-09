@@ -1,3 +1,6 @@
+# A complete checking analysis of a single structure. This script is modified from an original script:
+# https://github.com/jlgelpi/BioPhysics/blob/master/Notebooks/6m0j_check.ipynb
+
 # 1. We import the biobb_structure_checking module and the constants module from this module.
 import biobb_structure_checking
 import biobb_structure_checking.constants as cts
@@ -73,14 +76,3 @@ st_c._save_structure(args['output_structure_path'])
 st_c.rem_hydrogen('yes')
 import os
 os.system('check_structure -i ' + args['output_structure_path'] + ' -o ' + args['output_structure_path_charges'] + ' add_hydrogen --add_charges --add_mode auto')
-
-
-
-
-""" 
-6. We print the commands_help file.
-7. We define a base path for the input and output files.
-8. We set the paths for the input and output files.
-9. We set the debug and verbose arguments to False.
-10. We create an instance of the StructureChecking class, by passing
-"""
