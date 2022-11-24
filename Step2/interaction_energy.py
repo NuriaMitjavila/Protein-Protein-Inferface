@@ -110,7 +110,7 @@ def calc_solvation(res):
     return solv
 
 def calc_int_energies(st, res):
-    # Returns interaction energies (residue against other chains) for all atoms and for Ala atoms
+    # Returns interaction energies (residue against other chains) for all atoms
     elec = 0.
     vdw = 0.
     for at1 in res.get_atoms():
