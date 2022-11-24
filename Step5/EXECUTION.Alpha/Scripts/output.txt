@@ -1,5 +1,5 @@
-Total energy of all residues: 0
-Total energy of interface residues: -98.571742722166
+Total energy of all residues: -110.25781343957145
+Total energy of interface residues: -94.22778359413448
 Total energy of all residues, alanine scanning: -74.43774059696293
 Total energy of interface residues, alanine scanning: -58.594793181092
 Positive energy residues: MET, HIE, GLN, ASP, SER, 
