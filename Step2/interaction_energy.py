@@ -47,8 +47,8 @@ class AtomType():
         self.fsrf = float(data[4])
         self.rvdw = self.sig * 0.5612
         
-class VdwParamset(): #extracted from GELPI's github
-    #parameters for the VdW
+class VdwParamset(): # extracted from GELPI's github
+    # parameters for the VdW
     def __init__ (self, file_name):
         self.at_types = {}
         try:
@@ -65,11 +65,11 @@ class VdwParamset(): #extracted from GELPI's github
         fh.close()
 
 def atom_id(at):
-    '''Returns readable atom id'''
+    # Returns readable atom id
     return '{}.{}'.format(residue_id(at.get_parent()), at.id)
 
 def residue_id(res):
-    '''Returns readable residue id'''
+    # Returns readable residue id
     return '{} {}{}'.format(res.get_resname(), res.get_parent().id, res.id[1])
 
 def add_atom_parameters(st, res_lib, ff_params):
@@ -86,21 +86,21 @@ def add_atom_parameters(st, res_lib, ff_params):
         at.xtra['vdw'] = ff_params.at_types[at.xtra['atom_type']]
 
 def MH_diel(r):
-    '''Mehler-Solmajer dielectric'''
+    # Mehler-Solmajer dielectric
     return 86.9525 / (1 - 7.7839 * math.exp(-0.3153 * r)) - 8.5525
 
 def elec_int(at1, at2, r):
-    '''Electrostatic interaction energy between two atoms at r distance'''
+    # Electrostatic interaction energy between two atoms at r distance
     return 332.16 * at1.xtra['charge'] * at2.xtra['charge'] / MH_diel(r) / r
 
 def vdw_int(at1, at2, r):
-    '''Vdw interaction energy between two atoms'''
+    # Vdw interaction energy between two atoms
     eps12 = math.sqrt(at1.xtra['vdw'].eps * at2.xtra['vdw'].eps)
     sig12_2 = at1.xtra['vdw'].sig * at2.xtra['vdw'].sig
     return 4 * eps12 * (sig12_2**6/r**12 - sig12_2**3/r**6)
 
 def calc_solvation(res):
-    '''Solvation energy based on ASA'''
+    # Solvation energy based on ASA
     solv = 0.
     for at in res.get_atoms():
         if 'EXP_NACCESS' not in at.xtra:
@@ -110,9 +110,7 @@ def calc_solvation(res):
     return solv
 
 def calc_int_energies(st, res):
-    '''Returns interaction energies (residue against other chains)
-        for all atoms and for Ala atoms
-    '''
+    # Returns interaction energies (residue against other chains) for all atoms and for Ala atoms
     elec = 0.
     vdw = 0.
     for at1 in res.get_atoms():
@@ -127,24 +125,20 @@ def calc_int_energies(st, res):
     return elec, vdw
 
 def get_interface(st, dist):
-    ''' Detects interface residues within a distance(dist)
-        Assumes two chains, i.e. a unique interface set per chain.
-    '''
+    # Detects interface residues within a distance(dist). Assumes two chains, i.e. a unique interface set per chain.
     select_ats = []
     for at in st.get_atoms():
-        # Skip Hydrogens to reduce time
-        if at.element != 'H':
+        if at.element != 'H': # We are not selecting the hydrogen in order to save time
             select_ats.append(at)
     nbsearch = NeighborSearch(select_ats)
-    interface = {}
-    # Sets are more efficient than lists. Use sets when order is not relevant
+    interface = {} # Sets are more efficient than lists. Use sets when order is not relevant
     for ch in st[0]:
         interface[ch.id] = set()
 
     for at1, at2 in nbsearch.search_all(dist):
         #Only different chains
-        res1 = at1.get_parent()
-        ch1 = res1.get_parent()
+        res1 = at1.get_parent() # Pointer to the parent node, here the parent node of an atom is the residue
+        ch1 = res1.get_parent() # Here the parent node of a residue is a chain
         res2 = at2.get_parent()
         ch2 = res2.get_parent()
         if ch1 != ch2:
@@ -152,7 +146,7 @@ def get_interface(st, dist):
             interface[ch2.id].add(res2)
     return interface
 
-
+# Load all the paramenters that we will need to execute all the previous functions
 residue_library = ResiduesDataLib('/home/nuria/Downloads/biophysics.project/step2/aaLib.lib')
 ff_params = VdwParamset('/home/nuria/Downloads/biophysics.project/step2/vdwprm.txt')
 pdb_path = "/home/nuria/Downloads/biophysics.project/6m0j_fixed.pdb"
@@ -160,11 +154,12 @@ parser = PDBParser(PERMISSIVE=1)
 st = parser.get_structure('st', pdb_path)
 add_atom_parameters(st, residue_library, ff_params)
 
+# To be able to the the solvation related calculations:
 NACCESS_BINARY = '/home/nuria/Downloads/biophysics.project/step2/soft/NACCESS/naccess'
 srf = NACCESS_atomic(st[0], naccess_binary=NACCESS_BINARY)
 io = PDBIO()
 st_chains = {}
-# Using BioIO trick (see tutorial) to select chains
+# Using BioIO trick to select chains
 class SelectChain(Select):
     def __init__(self, chid):
         self.id = chid
@@ -191,23 +186,23 @@ Tsolvation = 0
 TsubunitA = 0
 TsubunitE = 0
 
-for model in st.get_models():
-    chainA = model["A"]
-    chainE = model["E"]
+for model in st.get_models(): # We get the models of our structure
+    chainA = model["A"] # we select the chain A of our structure
+    chainE = model["E"] # we select the chain E of our structure
 
-for residues in chainA.get_residues():
-    Telec += calc_int_energies(st[0], residues)[0]
-    Tvdw += calc_int_energies(st[0], residues)[1]
-    Tsolvation += calc_solvation(residues)
-    TsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]])
+for residues in chainA.get_residues(): # For every residue in the chain A of our protein
+    Telec += calc_int_energies(st[0], residues)[0] # Add electrostatic energy to the value of Ielec
+    Tvdw += calc_int_energies(st[0], residues)[1] # Add Van der Waals energies to the value of Ielec
+    Tsolvation += calc_solvation(residues) # Add the solvation for all the residues
+    TsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]]) # Add the solvarion at chain A
 
-for residues in chainE.get_residues():
-    Telec += calc_int_energies(st[0], residues)[0]
-    Tvdw += calc_int_energies(st[0], residues)[1]
-    Tsolvation += calc_solvation(residues)
-    TsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]])
+for residues in chainE.get_residues(): # For every residue in the chain E of our protein
+    Telec += calc_int_energies(st[0], residues)[0] # For every residue in the interface in a distance of max 3.7
+    Tvdw += calc_int_energies(st[0], residues)[1] # Add electrostatic energy to the value of Ielec
+    Tsolvation += calc_solvation(residues) # Add the solvation for all the residues
+    TsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]]) # Add the solvarion at chain E
 
-print("Total energy of all residues: ", Telec + Tvdw + Tsolvation - TsubunitA - TsubunitE) # -180
+print("Total energy of all residues: ", Telec + Tvdw + Tsolvation - TsubunitA - TsubunitE) # Global energy
 
 
 Ielec = 0
@@ -216,17 +211,17 @@ Isolvation = 0
 IsubunitA = 0
 IsubunitE = 0
 
-for residues in get_interface(st, 3.7)["A"]:
-    Ielec += calc_int_energies(st[0], residues)[0]
-    Ivdw += calc_int_energies(st[0], residues)[1]
-    Isolvation += calc_solvation(residues)
-    IsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]])
+for residues in get_interface(st, 3.7)["A"]: # For every residue in the interface in a distance of max 3.7
+    Ielec += calc_int_energies(st[0], residues)[0] # Add electrostatic energy to the value of Ielec
+    Ivdw += calc_int_energies(st[0], residues)[1] # Add Van der Waals energies to the value of Ielec
+    Isolvation += calc_solvation(residues) # Add the solvation for all the residues
+    IsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]]) # Add the solvarion at chain A
 
-for residues in get_interface(st, 3.7)["E"]:
-    Ielec += calc_int_energies(st[0], residues)[0]
-    Ivdw += calc_int_energies(st[0], residues)[1]
-    Isolvation += calc_solvation(residues)
-    IsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]])
+for residues in get_interface(st, 3.7)["E"]: # For every residue in the interface in a distance of max 3.7
+    Ielec += calc_int_energies(st[0], residues)[0] # Add electrostatic energy to the value of Ielec
+    Ivdw += calc_int_energies(st[0], residues)[1] # Add Van der Waals energies to the value of Ielec
+    Isolvation += calc_solvation(residues) # Add the solvation for all the residues
+    IsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]]) # Add the solvarion at chain E
 
-print("Total energy of interface residues: ", Ielec + Ivdw + Isolvation - IsubunitA - IsubunitE) # -134
+print("Total energy of interface residues: ", Ielec + Ivdw + Isolvation - IsubunitA - IsubunitE) # Interface energy
 
