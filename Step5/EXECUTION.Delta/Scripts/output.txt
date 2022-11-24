@@ -1,0 +1,6 @@
+Total energy of all residues: -155.69612419970895
+Total energy of interface residues: -125.55916664112878
+Total energy of all residues, alanine scanning: -66.43451293991308
+Total energy of interface residues, alanine scanning: -52.414851885362545
+Positive energy residues: 
+Negative energy residues: TRP, LYS, ASN, GLY, 
