@@ -1,6 +1,6 @@
 Total energy of all residues: -181.5367337539871
 Total energy of interface residues: -152.323063514708
-Total energy of all residues, alanine scanning: 
-Total energy of interface residues, alanine scanning: 
+Total energy of all residues, alanine scanning: -95.92603703099354
+Total energy of interface residues, alanine scanning: -82.37018110560982 KJ/mol
 Positive energy residues: 
-Negative energy residues: 
+Negative energy residues: LYS, PRO, THR, ALA, TYR
