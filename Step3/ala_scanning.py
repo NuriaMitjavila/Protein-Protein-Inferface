@@ -145,9 +145,9 @@ def get_interface(st, dist):
         interface[ch.id] = set()
 
     for at1, at2 in nbsearch.search_all(dist):
-        #Only different chains
-        res1 = at1.get_parent()
-        ch1 = res1.get_parent()
+        # Only different chains
+        res1 = at1.get_parent() # Pointer to the parent node, here the parent node of an atom is the residue
+        ch1 = res1.get_parent() # Here the parent node of a residue is a chain
         res2 = at2.get_parent()
         ch2 = res2.get_parent()
         if ch1 != ch2:
@@ -155,19 +155,23 @@ def get_interface(st, dist):
             interface[ch2.id].add(res2)
     return interface
 
+# Load all the paramenters that we will need to execute all the previous functions
 residue_library = ResiduesDataLib('/home/nuria/Downloads/biophysics.project/step2/aaLib.lib')
 ff_params = VdwParamset('/home/nuria/Downloads/biophysics.project/step2/vdwprm.txt')
 pdb_path = "/home/nuria/Downloads/biophysics.project/6m0j_fixed.pdb"
 parser = PDBParser(PERMISSIVE=1)
 st = parser.get_structure('st', pdb_path)
 add_atom_parameters(st, residue_library, ff_params)
+
+# Here we create the variable alanine atoms, with all the characteristics of alanine.
 ala_atoms = {'N', 'H', 'CA', 'HA', 'C', 'O', 'CB', 'HB', 'HB1', 'HB2', 'HB3', 'HA1', 'HA2', 'HA3'}
 
+# To be able to the the solvation related calculations:
 NACCESS_BINARY = '/home/nuria/Downloads/biophysics.project/step2/soft/NACCESS/naccess'
 srf = NACCESS_atomic(st[0], naccess_binary=NACCESS_BINARY)
 io = PDBIO()
 st_chains = {}
-
+# Using BioIO trick to select chains
 class SelectChain(Select):
     def __init__(self, chid):
         self.id = chid
@@ -199,25 +203,25 @@ In order to better understand energy related to the present amino acids, we use 
 us to take the energies with higher difference within eachother to compare the corresponding amino acids
 '''
 
-for model in st.get_models():
-    chainA = model["A"]
-    chainE = model["E"]
+for model in st.get_models(): # We get the models of our structure
+    chainA = model["A"] # we select the chain A of our structure
+    chainE = model["E"] # we select the chain E of our structure
 
-for residues in chainA.get_residues():
-    Telec += calc_int_energies(st[0], residues)[0]
-    Tvdw += calc_int_energies(st[0], residues)[1]
-    Tsolvation += calc_solvation(residues)
-    TsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]])
+for residues in chainA.get_residues(): # For every residue in the chain A of our protein
+    Telec += calc_int_energies(st[0], residues)[0] # Add electrostatic energy to the value of Ielec
+    Tvdw += calc_int_energies(st[0], residues)[1] # Add Van der Waals energies to the value of Ielec
+    Tsolvation += calc_solvation(residues) # Add the solvation for all the residues
+    TsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]]) # Add the solvarion at chain A
     diccionari[residues.id[1]] = calc_int_energies(st[0], residues)[0]+calc_int_energies(st[0], residues)[1]+calc_solvation(residues)-calc_solvation(st[0][chainA.id][residues.id[1]])
 
-for residues in chainE.get_residues():
-    Telec += calc_int_energies(st[0], residues)[0]
-    Tvdw += calc_int_energies(st[0], residues)[1]
-    Tsolvation += calc_solvation(residues)
-    TsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]])
+for residues in chainE.get_residues(): # For every residue in the chain E of our protein
+    Telec += calc_int_energies(st[0], residues)[0] # For every residue in the interface in a distance of max 3.7
+    Tvdw += calc_int_energies(st[0], residues)[1] # Add electrostatic energy to the value of Ielec
+    Tsolvation += calc_solvation(residues) # Add the solvation for all the residues
+    TsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]]) # Add the solvarion at chain E
     diccionari[residues.id[1]] = calc_int_energies(st[0], residues)[0]+calc_int_energies(st[0], residues)[1]+calc_solvation(residues)-calc_solvation(st[0][chainA.id][residues.id[1]])
 
-print("Total energy of all residues: ", Telec + Tvdw + Tsolvation - TsubunitA - TsubunitE)
+print("Total energy of all residues: ", Telec + Tvdw + Tsolvation - TsubunitA - TsubunitE) # Global energy
 
 
 Ielec = 0
@@ -226,21 +230,21 @@ Isolvation = 0
 IsubunitA = 0
 IsubunitE = 0
 
-for residues in get_interface(st, 3.7)["A"]:
-    Ielec += calc_int_energies(st[0], residues)[0]
-    Ivdw += calc_int_energies(st[0], residues)[1]
-    Isolvation += calc_solvation(residues)
-    IsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]])
+for residues in get_interface(st, 3.7)["A"]: # For every residue in the interface in a distance of max 3.7
+    Ielec += calc_int_energies(st[0], residues)[0] # Add electrostatic energy to the value of Ielec
+    Ivdw += calc_int_energies(st[0], residues)[1] # Add Van der Waals energies to the value of Ielec
+    Isolvation += calc_solvation(residues) # Add the solvation for all the residues
+    IsubunitA += calc_solvation(st[0][chainA.id][residues.id[1]]) # Add the solvarion at chain A
 
-for residues in get_interface(st, 3.7)["E"]:
-    Ielec += calc_int_energies(st[0], residues)[0]
-    Ivdw += calc_int_energies(st[0], residues)[1]
-    Isolvation += calc_solvation(residues)
-    IsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]])
+for residues in get_interface(st, 3.7)["E"]: # For every residue in the interface in a distance of max 3.7
+    Ielec += calc_int_energies(st[0], residues)[0] # Add electrostatic energy to the value of Ielec
+    Ivdw += calc_int_energies(st[0], residues)[1] # Add Van der Waals energies to the value of Ielec
+    Isolvation += calc_solvation(residues) # Add the solvation for all the residues
+    IsubunitE += calc_solvation(st[0][chainE.id][residues.id[1]]) # Add the solvarion at chain E
 
-print("Total energy of interface residues: ", Ielec + Ivdw + Isolvation - IsubunitA - IsubunitE)
+print("Total energy of interface residues: ", Ielec + Ivdw + Isolvation - IsubunitA - IsubunitE) # Interface energy
 
-
+# Create two lists and select the amino acids that are more and less relevant in terms of energy
 pos_important = []
 neg_important = []
 for key, values in diccionari.items():
@@ -249,6 +253,7 @@ for key, values in diccionari.items():
     elif values < -3.25:
         neg_important.append(key)
 
+# Print to the terminal the residues with more positive energy
 print('Positive energy residues: ')
 for x in pos_important:
     for residues in st.get_residues():
@@ -256,15 +261,15 @@ for x in pos_important:
             print(residues.get_resname())
 
 print('')
+# Print to the terminal the residues with more negative energy
 print('Negative energy residues: ')
 for x in neg_important:
     for residues in st.get_residues():
         if residues.id[1] == x:
             print(residues.get_resname())
 
+# Observe all the energies of the residues in a plot
 names = list(diccionari.keys())
 values = list(diccionari.values())
-
 plt.bar(range(len(diccionari)), values, tick_label=names)
 plt.show()
-
