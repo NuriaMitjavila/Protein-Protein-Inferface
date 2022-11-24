@@ -1,3 +1,8 @@
+'''
+The idea of this step is to do an alanine scanning, for that, our code does the same that we did in the previous steps but chainging un residue at the time for alanine
+so that we can see how changing a residue changes the energy of the interaction.
+'''
+
 import argparse
 import sys
 import os
@@ -48,8 +53,8 @@ class AtomType():
         self.fsrf = float(data[4])
         self.rvdw = self.sig * 0.5612
         
-class VdwParamset(): #extracted from GELPI's github
-    #parameters for the VdW
+class VdwParamset(): # Extracted from GELPI's github
+    # Parameters for the VdW
     def __init__ (self, file_name):
         self.at_types = {}
         try:
@@ -66,11 +71,11 @@ class VdwParamset(): #extracted from GELPI's github
         fh.close()
 
 def atom_id(at):
-    '''Returns readable atom id'''
+    # Returns readable atom id
     return '{}.{}'.format(residue_id(at.get_parent()), at.id)
 
 def residue_id(res):
-    '''Returns readable residue id'''
+    # Returns readable residue id
     return '{} {}{}'.format(res.get_resname(), res.get_parent().id, res.id[1])
 
 def add_atom_parameters(st, res_lib, ff_params):
@@ -87,21 +92,21 @@ def add_atom_parameters(st, res_lib, ff_params):
         at.xtra['vdw'] = ff_params.at_types[at.xtra['atom_type']]
 
 def MH_diel(r):
-    '''Mehler-Solmajer dielectric'''
+    # Mehler-Solmajer dielectric
     return 86.9525 / (1 - 7.7839 * math.exp(-0.3153 * r)) - 8.5525
 
 def elec_int(at1, at2, r):
-    '''Electrostatic interaction energy between two atoms at r distance'''
+    # Electrostatic interaction energy between two atoms at r distance
     return 332.16 * at1.xtra['charge'] * at2.xtra['charge'] / MH_diel(r) / r
 
 def vdw_int(at1, at2, r):
-    '''Vdw interaction energy between two atoms'''
+    # Vdw interaction energy between two atoms
     eps12 = math.sqrt(at1.xtra['vdw'].eps * at2.xtra['vdw'].eps)
     sig12_2 = at1.xtra['vdw'].sig * at2.xtra['vdw'].sig
     return 4 * eps12 * (sig12_2**6/r**12 - sig12_2**3/r**6)
 
-def calc_solvation(res):
-    '''Solvation energy based on ASA'''
+def calc_solvation(res): # Computes the solvation energies for alanine
+    # Returns the solvation energies (residue against other chains) for Ala atoms
     solv_ala = 0.
     for at in res.get_atoms():
         if 'EXP_NACCESS' not in at.xtra:
@@ -111,37 +116,31 @@ def calc_solvation(res):
             solv_ala += s
     return solv_ala
 
-def calc_int_energies(st, res):
-    '''Returns interaction energies (residue against other chains)
-        for all atoms and for Ala atoms
-    '''
+def calc_int_energies(st, res): # Computes the interaction energies for alanine
+    # Returns interaction energies (residue against other chains) for Ala atoms
     elec_ala = 0.
     vdw_ala = 0.
     for at1 in res.get_atoms():
         for at2 in st.get_atoms():
-        # skip same chain atom pairs
+        # Skip same chain atom pairs
             if at2.get_parent().get_parent() != res.get_parent():
                 r = at1 - at2
                 e = elec_int(at1, at2, r)
-                if at1.id in ala_atoms: #GLY are included implicitly
+                if at1.id in ala_atoms: # GLY are included implicitly
                     elec_ala += e
                 e = vdw_int(at1, at2, r)
-                if at1.id in ala_atoms: #GLY are included implicitly
+                if at1.id in ala_atoms: # GLY are included implicitly
                     vdw_ala += e
     return elec_ala, vdw_ala
 
 def get_interface(st, dist):
-    ''' Detects interface residues within a distance(dist)
-        Assumes two chains, i.e. a unique interface set per chain.
-    '''
+    # Detects interface residues within a distance(dist). Assumes two chains, i.e. a unique interface set per chain.
     select_ats = []
     for at in st.get_atoms():
-        # Skip Hydrogens to reduce time
-        if at.element != 'H':
+        if at.element != 'H': # Skip Hydrogens to reduce time
             select_ats.append(at)
     nbsearch = NeighborSearch(select_ats)
-    interface = {}
-    # Sets are more efficient than lists. Use sets when order is not relevant
+    interface = {} # Sets are more efficient than lists. Use sets when order is not relevant
     for ch in st[0]:
         interface[ch.id] = set()
 
@@ -194,6 +193,11 @@ Tsolvation = 0
 TsubunitA = 0
 TsubunitE = 0
 diccionari = {}
+
+'''
+In order to better understand energy related to the present amino acids, we use of dictionaries to enable 
+us to take the energies with higher difference within eachother to compare the corresponding amino acids
+'''
 
 for model in st.get_models():
     chainA = model["A"]
