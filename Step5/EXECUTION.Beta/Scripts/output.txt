@@ -1,0 +1,2 @@
+Total energy of all residues: -181.5367337539871
+Total energy of interface residues: -152.323063514708
